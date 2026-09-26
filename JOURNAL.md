@@ -120,3 +120,16 @@ Raw material for the blog post. Log what surprised us, numbers, screenshots, dea
     it is 55% of the time, and above 60% it is 80%. Jev seems to *know when it knows*.
   - Checks are 4% of legal moves but get 37% of Jev's probability (9×). Captures get 3.6×.
   - Stockfish's best is in Jev's top 3 in 67% of positions.
+
+## 2026-09-26: Game 1 recorded; layout pass
+
+- **Recorded game 1: 130 plies, draw by threefold repetition, $0.0061.** Even *with* sampling at
+  T 0.5 the game ended in a repetition, in a king-and-pawn-ish ending where Jev's distribution was
+  sharp enough that the top pick kept winning the draw. Argmax (T 0) would presumably loop sooner.
+  Worth recording one T 0 and one T 1 game to compare.
+- Why the default is T 0.5: at T 1 in the first live game only 52% of moves were Jev's top pick and
+  some were #18-#22 picks. Jev's top pick averages ~38%, so the long tail gets sampled constantly and
+  games read as dice rolls. T 0.5 squares the probabilities, which favors Jev's real preferences but
+  still breaks ties. T 0 is "pure Jev" but risks repetition loops.
+- UI: desktop is now one screen, and every transient message has reserved space (0 px layout shift,
+  measured). The Considered panel always shows a fixed number of rows.
