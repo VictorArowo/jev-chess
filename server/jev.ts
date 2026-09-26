@@ -20,6 +20,7 @@ export interface Candidate {
 export interface MoveResponse {
   model: string;
   mock: boolean;
+  forced?: boolean; // only one legal move: played without asking Jev
   candidates: Candidate[]; // sorted, most likely first; covers every legal move
   confidence: number; // 1 − normalized entropy of the distribution
   usage?: { inputTokens: number; outputTokens: number };
@@ -188,6 +189,10 @@ function concentration(ps: number[]): number {
 
 export async function pickMove(body: MoveRequest, apiKey: string | undefined): Promise<MoveResponse> {
   const { chess, moves, persona } = parse(body);
+  // A choice needs at least two options, and there's nothing to decide anyway.
+  if (moves.length === 1) {
+    return { model: "forced", mock: !apiKey, forced: true, candidates: [{ uci: uci(moves[0]), san: moves[0].san, p: 1 }], confidence: 1, latencyMs: 0 };
+  }
   const started = Date.now();
   const mock = !apiKey;
   const result = mock ? mockJev(chess, moves) : await callJev(apiKey, buildJevRequest(chess, moves, body.history, persona));

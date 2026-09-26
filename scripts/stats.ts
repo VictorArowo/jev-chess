@@ -10,7 +10,8 @@ const games = readdirSync("public/games")
   .filter((f) => f.endsWith(".json") && f !== "index.json")
   .map((f) => JSON.parse(readFileSync(`public/games/${f}`, "utf8")) as RecordedGame)
   .filter((g) => all || g.result);
-const plies = games.flatMap((g) => g.plies).filter((p): p is Ply & { verdict: NonNullable<Ply["verdict"]> } => !!p.verdict);
+// Forced moves (one legal move) never went to Jev, so they're left out of every Jev number.
+const plies = games.flatMap((g) => g.plies).filter((p): p is Ply & { verdict: NonNullable<Ply["verdict"]> } => !!p.verdict && !p.forced);
 if (!plies.length) {
   console.log("No graded plies yet.");
   process.exit(0);
@@ -38,7 +39,7 @@ console.log(`Median rank of Stockfish's best in Jev's list: ${median(plies.map((
 
 console.log("\n-- By phase --");
 for (const [label, lo, hi] of [["plies 1-10", 0, 10], ["plies 11-30", 10, 30], ["plies 31+", 30, Infinity]] as const) {
-  const xs = games.flatMap((g) => g.plies.slice(lo, hi)).filter((p) => p.verdict) as typeof plies;
+  const xs = games.flatMap((g) => g.plies.slice(lo, hi)).filter((p) => p.verdict && !p.forced) as typeof plies;
   if (!xs.length) continue;
   console.log(
     `${label.padEnd(12)} n=${String(xs.length).padEnd(4)} top-pick p ${pct(mean(xs.map((p) => p.candidates[0].p))).padStart(4)} · ` +
@@ -55,7 +56,7 @@ for (const [lo, hi] of [[0, 0.2], [0.2, 0.4], [0.4, 0.6], [0.6, 1.01]]) {
 
 console.log("\n-- Grades (moves actually played) --");
 for (const side of ["White", "Black"]) {
-  const xs = games.flatMap((g) => g.plies.filter((_, i) => (i % 2 === 0) === (side === "White"))).filter((p) => p.verdict) as typeof plies;
+  const xs = games.flatMap((g) => g.plies.filter((_, i) => (i % 2 === 0) === (side === "White"))).filter((p) => p.verdict && !p.forced) as typeof plies;
   const count = (gr: string) => xs.filter((p) => p.verdict.grade === gr).length;
   console.log(
     `${side.padEnd(6)} accuracy ${mean(xs.map((p) => p.verdict.accuracy)).toFixed(0)}% · best ${count("best")} · good ${count("good")} · ` +

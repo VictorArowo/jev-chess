@@ -419,7 +419,8 @@ function renderBars(ply: Ply | null, idx: number | null) {
   }
   const BAR_SLOTS = barSlots();
   const n = ply.candidates.length;
-  $("decision-meta").textContent = thinking && view === null ? "Jev is looking at the board…" : `${moveLabel(idx!)} · ${n} legal moves`;
+  $("decision-meta").textContent =
+    thinking && view === null ? "Jev is looking at the board…" : `${moveLabel(idx!)} · ${ply.forced ? "only legal move" : `${n} legal moves`}`;
 
   // Always BAR_SLOTS rows: the played move and Stockfish's move take the place of lower-ranked
   // rows rather than adding new ones, so the panel never changes height.
@@ -448,7 +449,7 @@ function renderBars(ply: Ply | null, idx: number | null) {
       ? `<li class="rest"><span class="san">+${rest.length} others</span><span class="track"></span><span class="p">${pct(rest.reduce((a, c) => a + c.p, 0))}</span></li>`
       : blank);
   $("verdict").innerHTML = verdictLine(ply);
-  const stats = [
+  const stats = ply.forced ? "Forced: the only legal move, so Jev wasn't asked." : [
     ply.rank === 1 ? "Jev's top pick" : `Jev's #${ply.rank} pick`,
     `T ${ply.temperature.toFixed(1)}`,
     `confidence ${ply.confidence.toFixed(2)}`,

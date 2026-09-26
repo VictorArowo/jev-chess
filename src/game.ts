@@ -15,6 +15,7 @@ export interface Ply {
   latencyMs: number;
   costUsd?: number;
   model: string;
+  forced?: boolean; // the only legal move; Jev wasn't asked
   verdict?: Verdict; // Stockfish's grade; live games fill it in asynchronously
 }
 
@@ -65,6 +66,7 @@ export function toPly(fenBefore: string, r: MoveResponse, idx: number, temperatu
     latencyMs: r.latencyMs,
     costUsd: r.costUsd,
     model: r.model,
+    ...(r.forced && { forced: true }),
   };
 }
 

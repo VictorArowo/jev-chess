@@ -81,7 +81,7 @@ for (let g = 0; g < GAMES; g++) {
     ply.verdict = await judge(engine, fenBefore, ply.uci, ply.candidates);
     plies.push(ply);
     chess.move(ply.san);
-    game.model = r.model;
+    if (!r.forced) game.model = r.model;
 
     const i = plies.length - 1;
     const g_ = GRADE_INFO[ply.verdict.grade];
