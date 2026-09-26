@@ -133,3 +133,29 @@ Raw material for the blog post. Log what surprised us, numbers, screenshots, dea
   still breaks ties. T 0 is "pure Jev" but risks repetition loops.
 - UI: desktop is now one screen, and every transient message has reserved space (0 px layout shift,
   measured). The Considered panel always shows a fixed number of rows.
+
+## 2026-09-26: Final dataset (5 games, 556 Jev moves)
+
+Games: three at T 0.5 (a threefold draw in 65, Black mates in 15, and an insufficient-material draw
+in 96), one at T 0 (Black mates in 20), one at T 1 (insufficient-material draw in 85). Total Jev cost
+**$0.028**, about $0.00005 per move. Forced moves (one legal move) are excluded from every number.
+
+**These are the numbers to quote** (`npm run stats`):
+
+- **Jev knows when it knows.** Bucketed by Jev's probability on its own top pick, the chance that
+  pick is Stockfish's best move is 11% (under 20%, n=109), 24% (20-40%, n=285), 47% (40-60%,
+  n=111) and **76% (over 60%, n=51)**. Its confidence is meaningful even when its chess isn't.
+- Jev's top pick = Stockfish's best in **31%** of positions. Stockfish's best is in Jev's top 3 in
+  **57%**. Median rank of Stockfish's move in Jev's list: 3rd of ~16 legal moves.
+- Strongest in the opening: 44% agreement with Stockfish in plies 1-10, 36% in 11-30, 28% after.
+  The top pick's probability falls from 49% to 32%, so it gets less sure *and* less right.
+- **Checks: 11% of legal moves, 47% of Jev's probability (4.1×). Captures: 13% of moves, 51% of
+  probability (3.8×).** It sees move *types*, not consequences.
+- Blunders: 50 in 556 moves (29 by White, 21 by Black), about one every 11 moves.
+- Temperature: T 0 played the top pick 100% of the time and **did not loop**; it got mated in 20.
+  T 0.5 played it 52% of the time (8.0 blunders per 100 moves), T 1 35% (10.8 per 100). The
+  "argmax loops" worry from day one didn't happen; the repetition draw came at T 0.5.
+- Caveat: Lichess-style accuracy (86-88%) flatters Jev, because in lopsided endgames nearly every
+  move keeps the (lost) balance. Don't headline it. Use blunder rate and agreement with Stockfish.
+- Operations: the recorder saw 500+ gateway retries (429/503) plus dropped connections. Early access
+  is the real bottleneck, not cost or speed.
