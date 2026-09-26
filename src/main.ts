@@ -15,7 +15,9 @@ import { DEFAULT_PERSONAS, isOver, resultText, sample, toPly, type GameSummary, 
 // Two sources feed one game loop: live Jev calls, or a recorded game replayed like a video.
 type Mode = "replay" | "live";
 
-const SHOW_BARS = 8;
+// Move rows in the Considered panel, plus a "+N others" row. CSS owns the number (--bar-rows) so
+// short screens can show fewer rows without the panel's height ever depending on content.
+const barSlots = () => (Number(getComputedStyle(document.documentElement).getPropertyValue("--bar-rows")) || 8) - 1;
 const DWELL_MS = 900; // how long the arrows stay up before the move is played
 const REPLAY_THINK_MS = 700; // stand-in for Jev's latency when replaying
 const BUSY_WAITS_S = [5, 10, 20, 30, 30];
@@ -226,6 +228,10 @@ async function loadReplay(id: string, autoplay: boolean) {
     return;
   }
   personas = replay.personas;
+  const when = new Date(replay.recordedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const info = `${(replay.result || "Unfinished.").replace(/\.$/, "")} · T ${replay.temperature.toFixed(1)} · ${when}`;
+  $("replay-info").textContent = info;
+  $("replay-info").title = info;
   playing = autoplay;
   render();
   if (playing) think();
@@ -388,7 +394,7 @@ function renderPlayers(turn: "w" | "b") {
       <span class="swatch ${side}"></span>
       <div class="who">
         <strong>${personas[side].name}</strong>
-        <span>${personas[side].persona}</span>
+        <span title="${personas[side].persona}">${personas[side].persona}</span>
       </div>
       <div class="pstat">${
         active
@@ -403,26 +409,32 @@ function renderPlayers(turn: "w" | "b") {
 
 function renderBars(ply: Ply | null, idx: number | null) {
   const bars = $("bars");
+  const blank = '<li class="blank"><span class="san"></span><span class="track"></span><span class="p"></span></li>';
   if (!ply) {
-    $("decision-meta").textContent = thinking ? "Jev is looking at the board…" : "";
-    bars.innerHTML = `<li class="empty">${thinking ? "" : "Every legal move, and how likely Jev thought it was, will appear here."}</li>`;
+    $("decision-meta").textContent = thinking ? "Jev is looking at the board…" : "every legal move, with Jev's probability";
+    bars.innerHTML = blank.repeat(barSlots() + 1);
     $("verdict").textContent = "";
     $("stats").textContent = "";
     return;
   }
+  const BAR_SLOTS = barSlots();
   const n = ply.candidates.length;
   $("decision-meta").textContent = thinking && view === null ? "Jev is looking at the board…" : `${moveLabel(idx!)} · ${n} legal moves`;
-  const shown = ply.candidates.slice(0, SHOW_BARS);
-  if (!shown.some((c) => c.uci === ply.uci)) shown.push(ply.candidates[ply.rank - 1]);
+
+  // Always BAR_SLOTS rows: the played move and Stockfish's move take the place of lower-ranked
+  // rows rather than adding new ones, so the panel never changes height.
   const v = ply.verdict;
-  if (v && !shown.some((c) => c.uci === v.bestUci)) {
-    const c = ply.candidates.find((c) => c.uci === v.bestUci);
-    if (c) shown.push(c);
-  }
-  const max = ply.candidates[0].p;
-  const rest = ply.candidates.filter((c) => !shown.includes(c));
+  const must = [ply.uci, v?.bestUci].filter((u, i, a): u is string => !!u && a.indexOf(u) === i);
+  const required = ply.candidates.filter((c) => must.includes(c.uci));
+  const rows = ply.candidates
+    .filter((c) => !must.includes(c.uci))
+    .slice(0, BAR_SLOTS - required.length)
+    .concat(required)
+    .sort((a, b) => b.p - a.p);
+  const max = ply.candidates[0].p || 1;
+  const rest = ply.candidates.filter((c) => !rows.includes(c));
   bars.innerHTML =
-    shown
+    rows
       .map(
         (c) => `<li class="${c.uci === ply.uci ? "played" : ""}">
           <span class="san">${c.san}${v?.bestUci === c.uci ? '<i class="sf-tag" title="Stockfish\'s best move">SF</i>' : ""}</span>
@@ -431,16 +443,22 @@ function renderBars(ply: Ply | null, idx: number | null) {
         </li>`,
       )
       .join("") +
-    (rest.length ? `<li class="rest"><span class="san">+${rest.length}</span><span class="track"></span><span class="p">${pct(rest.reduce((a, c) => a + c.p, 0))}</span></li>` : "");
+    blank.repeat(BAR_SLOTS - rows.length) +
+    (rest.length
+      ? `<li class="rest"><span class="san">+${rest.length} others</span><span class="track"></span><span class="p">${pct(rest.reduce((a, c) => a + c.p, 0))}</span></li>`
+      : blank);
   $("verdict").innerHTML = verdictLine(ply);
-  $("stats").innerHTML = [
-    `played <b>${ply.san}</b>${ply.rank === 1 ? ", its top choice" : `, its #${ply.rank} choice`} at T ${ply.temperature.toFixed(1)}`,
+  const stats = [
+    ply.rank === 1 ? "Jev's top pick" : `Jev's #${ply.rank} pick`,
+    `T ${ply.temperature.toFixed(1)}`,
     `confidence ${ply.confidence.toFixed(2)}`,
-    `${ply.latencyMs} ms`,
+    `${(ply.latencyMs / 1000).toFixed(1)} s`,
     ply.costUsd !== undefined && usd(ply.costUsd),
   ]
     .filter(Boolean)
     .join(" · ");
+  $("stats").textContent = stats;
+  $("stats").title = stats;
 }
 
 function verdictLine(ply: Ply): string {
@@ -482,7 +500,7 @@ function renderMoves(active: number | null) {
     rows.push(`<li><span class="num">${i / 2 + 1}.</span>${cell(i)}${cell(i + 1)}</li>`);
   }
   const spent = plies.reduce((a, p) => a + (p.costUsd ?? 0), 0);
-  $("moves-meta").textContent = spent ? `Jev cost so far ${usd(spent)}` : "";
+  $("moves-meta").textContent = spent ? `White's chances per Stockfish · Jev cost ${usd(spent)}` : "White's chances per Stockfish";
   const el = $("moves");
   el.innerHTML = rows.join("");
   // Scroll the list itself, never the page.
@@ -506,6 +524,7 @@ const pct = (p: number, digits = 1) => (p >= 0.995 ? "100" : (p * 100).toFixed(p
 function setStatus(text: string, error = false) {
   const el = $("status");
   el.textContent = text;
+  el.title = text; // the line is clamped to one row; hover shows all of it
   el.classList.toggle("error", error);
 }
 
@@ -563,6 +582,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 new ResizeObserver(() => renderAdvantage(view ?? (plies.length ? plies.length - 1 : null))).observe($("graph"));
+matchMedia("(max-height: 819px)").addEventListener("change", () => render());
 render();
 init();
 

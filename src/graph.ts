@@ -14,13 +14,13 @@ interface Opts {
   onSelect: (point: number) => void;
 }
 
-const H = 120;
 const PAD = { top: 10, right: 6, bottom: 10, left: 6 };
 const MIN_SPAN = 24; // plies; keeps early games from stretching edge to edge
 const FLAGGED: Grade[] = ["inaccuracy", "mistake", "blunder"];
 
 export function renderGraph(el: HTMLElement, points: GraphPoint[], opts: Opts) {
   const W = el.clientWidth || 340;
+  const H = el.clientHeight || 88;
   const span = Math.max(MIN_SPAN, points.length - 1);
   const x = (i: number) => PAD.left + (i / span) * (W - PAD.left - PAD.right);
   const y = (pct: number) => PAD.top + (1 - pct / 100) * (H - PAD.top - PAD.bottom);

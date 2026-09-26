@@ -4,65 +4,71 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jev vs Jev</title>
-    <meta name="description" content="Two copies of Jev, a classifier model with no search, play chess against each other. Every move is a single glance." />
+    <meta name="description" content="Jev, a classifier model, playing itself at chess. It scores every legal move in one call, and Stockfish grades what it plays." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
   </head>
-  <body>
+  <body data-mode="replay">
     <header class="masthead">
-      <div>
+      <div class="brand">
         <h1>Jev <em>vs</em> Jev</h1>
-        <p class="dek">Two copies of a classifier play chess. No search, no reasoning — every move is a single glance at the board.</p>
+        <p class="dek">A classifier model playing itself at chess. Jev scores every legal move in one call, and Stockfish grades what it plays.</p>
       </div>
-      <span class="badge" id="mock" hidden title="No AI_GATEWAY_API_KEY: distributions are fabricated locally">Mock data</span>
+      <div class="head-right">
+        <span class="badge" id="mock" hidden title="No AI_GATEWAY_API_KEY: distributions are fabricated locally">Mock data</span>
+        <div class="tabs" role="tablist" aria-label="Mode">
+          <button role="tab" id="tab-replay" aria-selected="true">Recorded games</button>
+          <button role="tab" id="tab-live" aria-selected="false">Play live</button>
+        </div>
+      </div>
     </header>
 
     <main class="stage">
       <section class="board-col">
-        <div class="player" id="player-b"></div>
-        <div class="board-row">
-          <div class="evalbar" id="evalbar" role="img" aria-label="Stockfish evaluation"><span id="eval-label"></span></div>
-          <div class="board-wrap"><div id="board"></div></div>
-        </div>
-        <div class="player" id="player-w"></div>
-        <div class="scrub" aria-label="Timeline">
-          <button id="first" class="icon" aria-label="Start of game" title="Start (Home)"><svg viewBox="0 0 16 16"><path d="M4 3v10M13 3 6 8l7 5z"/></svg></button>
-          <button id="prev" class="icon" aria-label="Previous move" title="Previous (←)"><svg viewBox="0 0 16 16"><path d="M11 3 4 8l7 5z"/></svg></button>
-          <input type="range" id="scrub" autocomplete="off" min="0" max="0" value="0" aria-label="Scrub through the game" />
-          <button id="next" class="icon" aria-label="Next move" title="Next (→)"><svg viewBox="0 0 16 16"><path d="m5 3 7 5-7 5z"/></svg></button>
-          <button id="last" class="icon" aria-label="Latest move" title="Latest (End)"><svg viewBox="0 0 16 16"><path d="M12 3v10M3 3l7 5-7 5z"/></svg></button>
-          <span class="scrub-label" id="scrub-label"></span>
+        <div class="board-inner">
+          <div class="player" id="player-b"></div>
+          <div class="board-row">
+            <div class="evalbar" id="evalbar" role="img" aria-label="Stockfish evaluation"><span id="eval-label"></span></div>
+            <div class="board-wrap"><div id="board"></div></div>
+          </div>
+          <div class="player" id="player-w"></div>
+          <div class="scrub" aria-label="Timeline">
+            <button id="first" class="icon" aria-label="Start of game" title="Start (Home)"><svg viewBox="0 0 16 16"><path d="M4 3v10M13 3 6 8l7 5z"/></svg></button>
+            <button id="prev" class="icon" aria-label="Previous move" title="Previous (←)"><svg viewBox="0 0 16 16"><path d="M11 3 4 8l7 5z"/></svg></button>
+            <input type="range" id="scrub" autocomplete="off" min="0" max="0" value="0" aria-label="Scrub through the game" />
+            <button id="next" class="icon" aria-label="Next move" title="Next (→)"><svg viewBox="0 0 16 16"><path d="m5 3 7 5-7 5z"/></svg></button>
+            <button id="last" class="icon" aria-label="Latest move" title="Latest (End)"><svg viewBox="0 0 16 16"><path d="M12 3v10M3 3l7 5-7 5z"/></svg></button>
+            <span class="scrub-label" id="scrub-label"></span>
+          </div>
         </div>
       </section>
 
       <aside class="side">
         <section class="panel controls">
-          <div class="tabs" role="tablist" aria-label="Mode">
-            <button role="tab" id="tab-replay" aria-selected="true">Recorded games</button>
-            <button role="tab" id="tab-live" aria-selected="false">Play live</button>
-          </div>
-          <div class="replay-only">
-            <label class="picker">
+          <div class="buttons">
+            <label class="picker replay-only">
               <span class="sr-only">Recorded game</span>
               <select id="game-select"></select>
             </label>
-          </div>
-          <div class="buttons">
             <button id="play" class="primary">Play</button>
             <button id="step" class="live-only">Step</button>
             <button id="reset">New game</button>
           </div>
-          <label class="slider live-only">
-            <span>Temperature <output id="temp-out">0.5</output></span>
-            <input type="range" id="temp" autocomplete="off" min="0" max="2" step="0.1" value="0.5" />
-            <small>0 always plays Jev's top pick · 1 plays as Jev believes · 2 wilder</small>
-          </label>
-          <p class="live-only note">Live games call Jev for every move. It's early access and often busy, so moves can take a while.</p>
+          <div class="second-row">
+            <p class="replay-only info" id="replay-info"></p>
+            <label class="slider live-only" title="0 always plays Jev's top pick. 1 samples exactly as Jev believes. Above 1 is wilder.">
+              <span>Temperature</span>
+              <input type="range" id="temp" autocomplete="off" min="0" max="2" step="0.1" value="0.5" />
+              <output id="temp-out">0.5</output>
+            </label>
+            <small class="hint replay-only">Drag the timeline or use ← → to step through moves.</small>
+            <small class="hint live-only">0 plays Jev's top pick every time. 1 samples as Jev believes.</small>
+          </div>
           <p class="status" id="status" role="status"></p>
         </section>
 
-        <section class="panel">
+        <section class="panel considered">
           <div class="panel-head">
             <h2>Considered</h2>
             <span class="meta" id="decision-meta"></span>
@@ -72,19 +78,12 @@
           <p class="stats" id="stats"></p>
         </section>
 
-        <section class="panel">
+        <section class="panel game">
           <div class="panel-head">
-            <h2>Advantage</h2>
-            <span class="meta">White's winning chances, per Stockfish</span>
-          </div>
-          <div class="graph" id="graph"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <h2>Moves</h2>
+            <h2>Game</h2>
             <span class="meta" id="moves-meta"></span>
           </div>
+          <div class="graph" id="graph"></div>
           <ol class="moves" id="moves"></ol>
         </section>
       </aside>
