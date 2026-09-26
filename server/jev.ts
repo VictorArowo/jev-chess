@@ -124,18 +124,31 @@ const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
 const BACKOFF_MS = [700, 1800, 4000];
 
 async function callJev(apiKey: string, payload: unknown): Promise<JevResult> {
-  let res: Response;
+  let res: Response | null = null;
   for (let attempt = 0; ; attempt++) {
-    res = await fetch(API_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (res.ok || !RETRY_STATUS.has(res.status) || attempt >= BACKOFF_MS.length) break;
-    console.warn(`[api] gateway ${res.status}, retrying in ${BACKOFF_MS[attempt]} ms`);
+    let why: string;
+    try {
+      res = await fetch(API_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(20_000),
+      });
+      if (res.ok || !RETRY_STATUS.has(res.status)) break;
+      why = `gateway ${res.status}`;
+    } catch (e) {
+      // Dropped connections (ECONNRESET) and timeouts are as transient as a 503.
+      res = null;
+      why = e instanceof Error ? ((e.cause as Error | undefined)?.message ?? e.message) : String(e);
+    }
+    if (attempt >= BACKOFF_MS.length) {
+      if (!res) throw new UpstreamBusy(`Jev is unreachable: ${why}`);
+      break;
+    }
+    console.warn(`[api] ${why}, retrying in ${BACKOFF_MS[attempt]} ms`);
     await new Promise((r) => setTimeout(r, BACKOFF_MS[attempt]));
   }
+  res = res!; // the loop only exits without a response by throwing
   if (!res.ok) {
     const text = await res.text();
     let message = text.slice(0, 200);
