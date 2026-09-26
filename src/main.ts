@@ -260,7 +260,7 @@ async function init() {
     library = [];
   }
   const select = $("game-select") as HTMLSelectElement;
-  select.innerHTML = library.map((g) => `<option value="${g.id}">${g.title}</option>`).join("");
+  select.innerHTML = library.map((g) => `<option value="${g.id}">${g.title} · T ${g.temperature.toFixed(1)}</option>`).join("");
   if (!library.length) {
     ($("tab-replay") as HTMLButtonElement).disabled = true;
     setMode("live");

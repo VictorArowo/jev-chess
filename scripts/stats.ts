@@ -72,3 +72,16 @@ for (const [label, test] of [["checks", (san: string) => san.includes("+") || sa
   const base = mean(xs.map((p) => p.candidates.filter((c) => test(c.san)).length / p.candidates.length));
   console.log(`${label.padEnd(9)} ${pct(base).padStart(4)} of legal moves, ${pct(mass).padStart(4)} of Jev's probability  (${(mass / base).toFixed(1)}×, n=${xs.length})`);
 }
+
+console.log("\n-- By temperature --");
+const temps = [...new Set(games.map((g) => g.temperature))].sort((a, b) => a - b);
+for (const t of temps) {
+  const gs = games.filter((g) => g.temperature === t);
+  const xs = gs.flatMap((g) => g.plies).filter((p) => p.verdict && !p.forced) as typeof plies;
+  if (!xs.length) continue;
+  console.log(
+    `T ${t.toFixed(1)}  games ${gs.length} · plies ${xs.length} · played top pick ${pct(share(xs, (p) => p.rank === 1))} · ` +
+      `accuracy ${mean(xs.map((p) => p.verdict.accuracy)).toFixed(0)}% · blunders/100 moves ${((100 * xs.filter((p) => p.verdict.grade === "blunder").length) / xs.length).toFixed(1)}`,
+  );
+  for (const g of gs) console.log(`         ${g.result || "(in progress)"} ${g.plies.length} plies`);
+}
