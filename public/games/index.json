@@ -16,5 +16,23 @@
     "temperature": 0.5,
     "result": "Checkmate. Black Jev wins.",
     "plyCount": 30
+  },
+  {
+    "id": "2026-09-26-20-36-22",
+    "title": "Game 3: Draw by insufficient material (96 moves)",
+    "recordedAt": "2026-09-26T20:36:22.401Z",
+    "model": "typesafe-ai/jev",
+    "temperature": 0.5,
+    "result": "Draw by insufficient material.",
+    "plyCount": 191
+  },
+  {
+    "id": "2026-09-26-20-53-03",
+    "title": "Game 4: Black wins by checkmate (20 moves)",
+    "recordedAt": "2026-09-26T20:53:03.738Z",
+    "model": "typesafe-ai/jev",
+    "temperature": 0,
+    "result": "Checkmate. Black Jev wins.",
+    "plyCount": 40
   }
 ]
