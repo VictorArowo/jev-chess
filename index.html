@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jev vs Jev</title>
+    <meta name="description" content="Two copies of Jev, a classifier model with no search, play chess against each other. Every move is a single glance." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="masthead">
+      <div>
+        <h1>Jev <em>vs</em> Jev</h1>
+        <p class="dek">Two copies of a classifier play chess. No search, no reasoning — every move is a single glance at the board.</p>
+      </div>
+      <span class="badge" id="mock" hidden title="No AI_GATEWAY_API_KEY: distributions are fabricated locally">Mock data</span>
+    </header>
+
+    <main class="stage">
+      <section class="board-col">
+        <div class="player" id="player-b"></div>
+        <div class="board-row">
+          <div class="evalbar" id="evalbar" role="img" aria-label="Stockfish evaluation"><span id="eval-label"></span></div>
+          <div class="board-wrap"><div id="board"></div></div>
+        </div>
+        <div class="player" id="player-w"></div>
+        <div class="scrub" aria-label="Timeline">
+          <button id="first" class="icon" aria-label="Start of game" title="Start (Home)"><svg viewBox="0 0 16 16"><path d="M4 3v10M13 3 6 8l7 5z"/></svg></button>
+          <button id="prev" class="icon" aria-label="Previous move" title="Previous (←)"><svg viewBox="0 0 16 16"><path d="M11 3 4 8l7 5z"/></svg></button>
+          <input type="range" id="scrub" autocomplete="off" min="0" max="0" value="0" aria-label="Scrub through the game" />
+          <button id="next" class="icon" aria-label="Next move" title="Next (→)"><svg viewBox="0 0 16 16"><path d="m5 3 7 5-7 5z"/></svg></button>
+          <button id="last" class="icon" aria-label="Latest move" title="Latest (End)"><svg viewBox="0 0 16 16"><path d="M12 3v10M3 3l7 5-7 5z"/></svg></button>
+          <span class="scrub-label" id="scrub-label"></span>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel controls">
+          <div class="tabs" role="tablist" aria-label="Mode">
+            <button role="tab" id="tab-replay" aria-selected="true">Recorded games</button>
+            <button role="tab" id="tab-live" aria-selected="false">Play live</button>
+          </div>
+          <div class="replay-only">
+            <label class="picker">
+              <span class="sr-only">Recorded game</span>
+              <select id="game-select"></select>
+            </label>
+          </div>
+          <div class="buttons">
+            <button id="play" class="primary">Play</button>
+            <button id="step" class="live-only">Step</button>
+            <button id="reset">New game</button>
+          </div>
+          <label class="slider live-only">
+            <span>Temperature <output id="temp-out">0.5</output></span>
+            <input type="range" id="temp" autocomplete="off" min="0" max="2" step="0.1" value="0.5" />
+            <small>0 always plays Jev's top pick · 1 plays as Jev believes · 2 wilder</small>
+          </label>
+          <p class="live-only note">Live games call Jev for every move. It's early access and often busy, so moves can take a while.</p>
+          <p class="status" id="status" role="status"></p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Considered</h2>
+            <span class="meta" id="decision-meta"></span>
+          </div>
+          <ol class="bars" id="bars"></ol>
+          <p class="verdict" id="verdict"></p>
+          <p class="stats" id="stats"></p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Advantage</h2>
+            <span class="meta">White's winning chances, per Stockfish</span>
+          </div>
+          <div class="graph" id="graph"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Moves</h2>
+            <span class="meta" id="moves-meta"></span>
+          </div>
+          <ol class="moves" id="moves"></ol>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="foot">
+      Moves by <a href="https://docs.typesafe.ai/">Jev</a> (TypeSafe AI) via Vercel AI Gateway.
+      Referee: <a href="https://github.com/nmrugg/stockfish.js">Stockfish.js</a> 19 lite, <a href="/stockfish/COPYING.txt">GPLv3</a>.
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

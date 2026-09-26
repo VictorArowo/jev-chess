@@ -1,0 +1,29 @@
+{
+  "name": "jev-chess",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc",
+    "postinstall": "node scripts/copy-stockfish.mjs",
+    "record": "tsx --env-file=.env.local scripts/record.ts",
+    "stats": "tsx scripts/stats.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "Two Jev classifier models play chess",
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "chessground": "^9.2.1",
+    "stockfish": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  },
+  "private": true,
+  "type": "module"
+}
