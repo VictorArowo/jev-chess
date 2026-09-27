@@ -204,6 +204,7 @@ function seek(k: number) {
     view = k;
   }
   render();
+  syncUrl();
 }
 
 // ---------- modes ----------
@@ -234,18 +235,22 @@ async function loadReplay(id: string, autoplay: boolean) {
   $("replay-info").title = info;
   playing = autoplay;
   render();
+  syncUrl();
   if (playing) think();
 }
 
-function setMode(m: Mode) {
+function setMode(m: Mode, load = true) {
   mode = m;
   document.body.dataset.mode = m;
   $("tab-replay").setAttribute("aria-selected", String(m === "replay"));
   $("tab-live").setAttribute("aria-selected", String(m === "live"));
   $("reset").textContent = m === "replay" ? "Restart" : "New game";
   $("mock").hidden = true;
-  if (m === "replay" && library.length) loadReplay(($("game-select") as HTMLSelectElement).value, false);
+  if (m === "replay") {
+    if (load && library.length) loadReplay(($("game-select") as HTMLSelectElement).value, false);
+  }
   else {
+    history.replaceState(null, "", location.pathname);
     replay = null;
     personas = DEFAULT_PERSONAS;
     resetGame();
@@ -266,9 +271,22 @@ async function init() {
     setMode("live");
     return;
   }
-  mode = "replay";
-  setMode("replay");
-  loadReplay(select.value, true);
+  // Deep link: ?game=<id>&ply=<n> opens that recorded game paused on decision n (1-based).
+  const params = new URLSearchParams(location.search);
+  const linked = library.find((g) => g.id === params.get("game"));
+  if (linked) select.value = linked.id;
+  setMode("replay", false);
+  const ply = Number(params.get("ply"));
+  await loadReplay(select.value, !linked);
+  if (linked && ply >= 1) seek(ply - 1);
+}
+
+// Keep the address bar pointing at what's on screen, so any position can be shared.
+function syncUrl() {
+  if (mode !== "replay" || !replay) return;
+  const q = new URLSearchParams({ game: replay.id });
+  if (view !== null) q.set("ply", String(view + 1));
+  history.replaceState(null, "", `?${q}`);
 }
 
 // ---------- rendering ----------
